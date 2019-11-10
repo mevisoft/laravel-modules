@@ -1,0 +1,20 @@
+{
+    "name": "$STUDLY_NAME$",
+    "alias": "$LOWER_NAME$",
+    "description": "$STUDLY_NAME$",
+    "category":"default",
+    "version": "1.0.0",
+    "active": 0,
+    "installed": 0,
+    "keywords": [],
+    "order": 0,
+    "dependencies":[],
+    "autoinstall":0,
+    "initfile":"",
+    "providers": [
+        "$MODULE_NAMESPACE$\\$STUDLY_NAME$\\$PROVIDER_NAMESPACE$\\$STUDLY_NAME$ServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
