@@ -54,7 +54,7 @@
       }
     },
     "branch-alias": {
-      "dev-master": "7.0.3-dev"
+      "dev-master": "7.0-dev"
     }
   },
   "scripts": {
