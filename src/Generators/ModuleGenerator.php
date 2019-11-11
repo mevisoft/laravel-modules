@@ -80,9 +80,9 @@ class ModuleGenerator extends Generator
      * The constructor.
      * @param $name
      * @param FileRepository $module
-     * @param Config     $config
+     * @param Config $config
      * @param Filesystem $filesystem
-     * @param Console    $console
+     * @param Console $console
      */
     public function __construct(
         $name,
@@ -91,7 +91,8 @@ class ModuleGenerator extends Generator
         Filesystem $filesystem = null,
         Console $console = null,
         ActivatorInterface $activator = null
-    ) {
+    )
+    {
         $this->name = $name;
         $this->config = $config;
         $this->filesystem = $filesystem;
@@ -312,7 +313,7 @@ class ModuleGenerator extends Generator
             $this->cleanModuleJsonFile();
         }
 
-        $this->activator->setActiveByName($name, $this->isActive);
+        $this->activator->setActiveByName($name, false, false);
 
         $this->console->info("Module [{$name}] created successfully.");
     }
@@ -386,7 +387,7 @@ class ModuleGenerator extends Generator
                 '--master' => true,
             ]);
             $this->console->call('module:make-provider', [
-                'name' =>  'AppServiceProvider',
+                'name' => 'AppServiceProvider',
                 'module' => $this->getName()
             ]);
             $this->console->call('module:auth-provider', [
