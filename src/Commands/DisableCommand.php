@@ -30,12 +30,16 @@ class DisableCommand extends Command
         /** @var Module $module */
         $module = $this->laravel['modules']->findOrFail($this->argument('module'));
 
-        if ($module->isEnabled()) {
-            $module->disable();
+        if ($module->isInstall()) {
+            if ($module->isEnabled()) {
+                $module->disable();
 
-            $this->info("Module [{$module}] disabled successful.");
+                $this->info("Module [{$module}] disabled successful.");
+            } else {
+                $this->comment("Module [{$module}] has already disabled.");
+            }
         } else {
-            $this->comment("Module [{$module}] has already disabled.");
+            $this->comment("Module [{$module}] not installed.");
         }
     }
 

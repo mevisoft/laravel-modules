@@ -12,7 +12,7 @@ use Nwidart\Modules\Commands\EnableCommand;
 use Nwidart\Modules\Commands\EventMakeCommand;
 use Nwidart\Modules\Commands\EventProviderMakeCommand;
 use Nwidart\Modules\Commands\FactoryMakeCommand;
-use Nwidart\Modules\Commands\InstallCommand;
+use Nwidart\Modules\Commands\AddCommand;
 use Nwidart\Modules\Commands\JobMakeCommand;
 use Nwidart\Modules\Commands\LaravelModulesV6Migrator;
 use Nwidart\Modules\Commands\ListCommand;
@@ -70,7 +70,7 @@ class ConsoleServiceProvider extends ServiceProvider
         AuthProviderMakeCommand::class,
         EventProviderMakeCommand::class,
         RouteProviderMakeCommand::class,
-        InstallCommand::class,
+        AddCommand::class,
         ListCommand::class,
         ModuleDeleteCommand::class,
         ModuleMakeCommand::class,

@@ -4,11 +4,16 @@ namespace Nwidart\Modules;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Translation\Translator;
+use Nwidart\Modules\Commands\MigrateCommand;
+use Nwidart\Modules\Commands\MigrateResetCommand;
+use Nwidart\Modules\Commands\SeedCommand;
 use Nwidart\Modules\Contracts\ActivatorInterface;
 
 abstract class Module
@@ -58,6 +63,11 @@ abstract class Module
     private $activator;
 
     /**
+     * @var Kernel
+     */
+    private $console;
+
+    /**
      * The constructor.
      * @param Container $app
      * @param $name
@@ -71,6 +81,7 @@ abstract class Module
         $this->files = $app['files'];
         $this->translator = $app['translator'];
         $this->activator = $app[ActivatorInterface::class];
+        $this->console = $app[Kernel::class];
         $this->app = $app;
     }
 
@@ -217,7 +228,7 @@ abstract class Module
      *
      * @return Json
      */
-    public function json($file = null) : Json
+    public function json($file = null): Json
     {
         if ($file === null) {
             $file = 'module.json';
@@ -279,6 +290,7 @@ abstract class Module
     {
         $this->app['events']->dispatch(sprintf('modules.%s.' . $event, $this->getLowerName()), [$this]);
     }
+
     /**
      * Register the aliases from this module.
      */
@@ -323,7 +335,7 @@ abstract class Module
      *
      * @return bool
      */
-    public function isStatus(bool $status) : bool
+    public function isStatus(bool $status): bool
     {
         return $this->activator->hasStatus($this, $status);
     }
@@ -333,7 +345,7 @@ abstract class Module
      *
      * @return bool
      */
-    public function isEnabled() : bool
+    public function isEnabled(): bool
     {
         return $this->activator->hasStatus($this, true);
     }
@@ -343,9 +355,19 @@ abstract class Module
      *
      * @return bool
      */
-    public function isDisabled() : bool
+    public function isDisabled(): bool
     {
         return !$this->isEnabled();
+    }
+
+    /**
+     * Determine whether the current module activated.
+     *
+     * @return bool
+     */
+    public function isInstall(): bool
+    {
+        return $this->activator->hasInstall($this, true);
     }
 
     /**
@@ -357,7 +379,19 @@ abstract class Module
      */
     public function setActive(bool $active): void
     {
-         $this->activator->setActive($this, $active);
+        $this->activator->setActive($this, $active);
+    }
+
+    /**
+     * Set active state for current module.
+     *
+     * @param bool $active
+     *
+     * @return void
+     */
+    public function setInstall(bool $active): void
+    {
+        $this->activator->setInstall($this, $active);
     }
 
     /**
@@ -386,6 +420,44 @@ abstract class Module
         $this->fireEvent('enabled');
     }
 
+    public function install()
+    {
+        $this->fireEvent('installing');
+
+        $this->console->call(MigrateCommand::class, [
+            "module" => $this->getName(),
+            "--force" => 1,
+            '--quiet' => 1,
+        ]);
+
+        $this->console->call(SeedCommand::class, [
+            "module" => $this->getName(),
+            "--force" => 1,
+            '--quiet' => 1,
+        ]);
+
+        $this->activator->install($this);
+        $this->flushCache();
+
+        $this->fireEvent('installed');
+    }
+
+    public function uninstall()
+    {
+        $this->fireEvent('uninstalling');
+        Schema::disableForeignKeyConstraints();
+        $this->console->call(MigrateResetCommand::class, [
+            "module" => $this->getName(),
+            "--force" => 1,
+            '--quiet' => 1,
+        ]);
+        Schema::enableForeignKeyConstraints();
+        $this->activator->uninstall($this);
+        $this->flushCache();
+
+        $this->fireEvent('uninstalled');
+    }
+
     /**
      * Delete the current module.
      *
@@ -393,6 +465,7 @@ abstract class Module
      */
     public function delete(): bool
     {
+        $this->uninstall();
         $this->activator->delete($this);
 
         return $this->json()->getFilesystem()->deleteDirectory($this->getPath());
@@ -405,7 +478,7 @@ abstract class Module
      *
      * @return string
      */
-    public function getExtraPath(string $path) : string
+    public function getExtraPath(string $path): string
     {
         return $this->getPath() . '/' . $path;
     }
@@ -432,8 +505,8 @@ abstract class Module
     /**
      * Register a translation file namespace.
      *
-     * @param  string  $path
-     * @param  string  $namespace
+     * @param string $path
+     * @param string $namespace
      * @return void
      */
     private function loadTranslationsFrom(string $path, string $namespace): void

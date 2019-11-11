@@ -17,45 +17,45 @@ class FileActivator implements ActivatorInterface
      *
      * @var CacheManager
      */
-    private $cache;
+    protected $cache;
 
     /**
      * Laravel Filesystem instance
      *
      * @var Filesystem
      */
-    private $files;
+    protected $files;
 
     /**
      * Laravel config instance
      *
      * @var Config
      */
-    private $config;
+    protected $config;
 
     /**
      * @var string
      */
-    private $cacheKey;
+    protected $cacheKey;
 
     /**
      * @var string
      */
-    private $cacheLifetime;
+    protected $cacheLifetime;
 
     /**
      * Array of modules activation statuses
      *
-     * @var array
+     * @var array|ModuleStatus[]
      */
-    private $modulesStatuses;
+    protected $modulesStatuses;
 
     /**
      * File used to store activation statuses
      *
      * @var string
      */
-    private $statusesFile;
+    protected $statusesFile;
 
     public function __construct(Container $app)
     {
@@ -79,35 +79,48 @@ class FileActivator implements ActivatorInterface
     }
 
     /**
-     * @inheritDoc
-     */
-    public function reset(): void
-    {
-        if ($this->files->exists($this->statusesFile)) {
-            $this->files->delete($this->statusesFile);
-        }
-        $this->modulesStatuses = [];
-        $this->flushCache();
-    }
-
-    /**
-     * @inheritDoc
+     * Enables a module
+     *
+     * @param Module $module
      */
     public function enable(Module $module): void
     {
-        $this->setActiveByName($module->getName(), true);
+        $this->setActiveByName($module->getName(), true, $module->isInstall());
     }
 
     /**
-     * @inheritDoc
+     * Disables a module
+     *
+     * @param Module $module
      */
     public function disable(Module $module): void
     {
-        $this->setActiveByName($module->getName(), false);
+        $this->setActiveByName($module->getName(), false, $module->isInstall());
     }
 
     /**
-     * @inheritDoc
+     * @param Module $module
+     */
+    public function install(Module $module): void
+    {
+        $this->setInstallByName($module->getName(), true);
+    }
+
+    /**
+     * @param Module $module
+     */
+    public function uninstall(Module $module): void
+    {
+        $this->setInstallByName($module->getName(), false);
+    }
+
+    /**
+     * Determine whether the given status same with a module status.
+     *
+     * @param Module $module
+     * @param bool $status
+     *
+     * @return bool
      */
     public function hasStatus(Module $module, bool $status): bool
     {
@@ -115,29 +128,79 @@ class FileActivator implements ActivatorInterface
             return $status === false;
         }
 
-        return $this->modulesStatuses[$module->getName()] === $status;
+        return optional($this->modulesStatuses[$module->getName()])->enable === $status;
     }
 
     /**
-     * @inheritDoc
+     * Determine whether the given status same with a module status.
+     *
+     * @param Module $module
+     * @param bool $status
+     *
+     * @return bool
+     */
+    public function hasInstall(Module $module, bool $status): bool
+    {
+        if (!isset($this->modulesStatuses[$module->getName()])) {
+            return $status === false;
+        }
+
+        return optional($this->modulesStatuses[$module->getName()])->install === $status;
+    }
+
+    /**
+     * Set active state for a module.
+     *
+     * @param Module $module
+     * @param bool $active
      */
     public function setActive(Module $module, bool $active): void
     {
-        $this->setActiveByName($module->getName(), $active);
+        $this->setActiveByName($module->getName(), $active, $this->hasInstall($module, true));
     }
 
     /**
-     * @inheritDoc
+     * Set active state for a module.
+     *
+     * @param Module $module
+     * @param bool $active
      */
-    public function setActiveByName(string $name, bool $status): void
+    public function setInstall(Module $module, bool $active): void
     {
-        $this->modulesStatuses[$name] = $status;
+        $this->setInstallByName($module->getName(), $active);
+    }
+
+    /**
+     * Sets a module status by its name
+     *
+     * @param string $name
+     * @param bool $active
+     * @param bool $install
+     */
+    public function setActiveByName(string $name, bool $active, bool $install): void
+    {
+        $this->modulesStatuses[$name] = new ModuleStatus($name, $install == $active, $install);
         $this->writeJson();
         $this->flushCache();
     }
 
     /**
-     * @inheritDoc
+     * Sets a module status by its name
+     *
+     * @param string $name
+     * @param bool $active
+     */
+    public function setInstallByName(string $name, bool $active): void
+    {
+        $this->modulesStatuses[$name] = new ModuleStatus($name, $active, $active);
+        $this->writeJson();
+        $this->flushCache();
+    }
+
+    /**
+     * Deletes a module activation status
+     *
+     * @param Module $module
      */
     public function delete(Module $module): void
     {
@@ -150,11 +213,23 @@ class FileActivator implements ActivatorInterface
     }
 
     /**
+     * Deletes any module activation statuses created by this class.
+     */
+    public function reset(): void
+    {
+        if ($this->files->exists($this->statusesFile)) {
+            $this->files->delete($this->statusesFile);
+        }
+        $this->modulesStatuses = [];
+        $this->flushCache();
+    }
+
+    /**
      * Writes the activation statuses in a file, as json
      */
     private function writeJson(): void
     {
-        $this->files->put($this->statusesFile, json_encode($this->modulesStatuses, JSON_PRETTY_PRINT));
+        $this->files->put($this->statusesFile, serialize($this->modulesStatuses));
     }
 
     /**
@@ -164,11 +239,15 @@ class FileActivator implements ActivatorInterface
      */
     private function readJson(): array
     {
+        if (!$this->files->exists($dir = dirname($this->statusesFile))) {
+            $this->files->makeDirectory($dir);
+        }
         if (!$this->files->exists($this->statusesFile)) {
             return [];
         }
+        var_dump(realpath($this->statusesFile));
 
-        return json_decode($this->files->get($this->statusesFile), true);
+        return unserialize($this->files->get($this->statusesFile));
     }
 
     /**
@@ -191,13 +270,15 @@ class FileActivator implements ActivatorInterface
     /**
      * Reads a config parameter under the 'activators.file' key
      *
-     * @param  string $key
+     * @param string $key
      * @param  $default
      * @return mixed
      */
     private function config(string $key, $default = null)
     {
-        return $this->config->get('modules.activators.file.' . $key, $default);
+        $active = $this->config->get('modules.activator');
+
+        return $this->config->get('modules.activators.' . $active . '.' . $key, $default);
     }
 
     /**

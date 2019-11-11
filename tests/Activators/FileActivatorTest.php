@@ -42,6 +42,7 @@ class FileActivatorTest extends BaseTestCase
     /** @test */
     public function it_creates_valid_json_file_after_enabling()
     {
+        $this->activator->install($this->module);
         $this->activator->enable($this->module);
         $this->assertMatchesSnapshot($this->finder->get($this->activator->getStatusesFilePath()));
 
@@ -52,6 +53,7 @@ class FileActivatorTest extends BaseTestCase
     /** @test */
     public function it_creates_valid_json_file_after_disabling()
     {
+        $this->activator->install($this->module);
         $this->activator->disable($this->module);
         $this->assertMatchesSnapshot($this->finder->get($this->activator->getStatusesFilePath()));
 
@@ -62,6 +64,7 @@ class FileActivatorTest extends BaseTestCase
     /** @test */
     public function it_can_check_module_enabled_status()
     {
+        $this->activator->install($this->module);
         $this->activator->enable($this->module);
         $this->assertTrue($this->activator->hasStatus($this->module, true));
 
@@ -72,6 +75,7 @@ class FileActivatorTest extends BaseTestCase
     /** @test */
     public function it_can_check_module_disabled_status()
     {
+        $this->activator->install($this->module);
         $this->activator->disable($this->module);
         $this->assertTrue($this->activator->hasStatus($this->module, false));
 

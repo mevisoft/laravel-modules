@@ -8,14 +8,14 @@ use Nwidart\Modules\Process\Installer;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
-class InstallCommand extends Command
+class AddCommand extends Command
 {
     /**
      * The console command name.
      *
      * @var string
      */
-    protected $name = 'module:install';
+    protected $name = 'module:add';
 
     /**
      * The console command description.
