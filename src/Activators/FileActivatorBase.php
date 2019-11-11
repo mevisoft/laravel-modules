@@ -5,7 +5,6 @@ namespace Nwidart\Modules\Activators;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Config\Repository as Config;
 use Illuminate\Container\Container;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
 use Nwidart\Modules\Contracts\ActivatorInterface;
 use Nwidart\Modules\Module;
@@ -67,12 +66,13 @@ abstract class FileActivatorBase implements ActivatorInterface
         $this->cacheLifetime = $this->config('cache-lifetime');
         $this->modulesStatuses = $this->getModulesStatuses();
     }
+
     /**
      * Array of modules activation statuses
      *
      * @return  array|ModuleStatus[]
      */
-    protected abstract function getModulesStatuses(): array;
+    abstract protected function getModulesStatuses(): array;
 
     /**
      * Get the path of the file where statuses are stored
@@ -151,8 +151,8 @@ abstract class FileActivatorBase implements ActivatorInterface
         if (($config = $this->getConfigModule($module->getName())) != null) {
             return $config->enable === $status;
         }
-        return $status === false;
 
+        return $status === false;
     }
 
     /**
@@ -168,6 +168,7 @@ abstract class FileActivatorBase implements ActivatorInterface
         if (($config = $this->getConfigModule($module->getName())) != null) {
             return $config->install === $status;
         }
+
         return $status === false;
     }
 
@@ -202,8 +203,8 @@ abstract class FileActivatorBase implements ActivatorInterface
      */
     public function setActiveByName(string $name, bool $active, bool $install): void
     {
-        $this->modulesStatuses[$name] = new ModuleStatus($name, $install == $active, $install);
-       $this->flushCache();
+        $this->modulesStatuses[$name] = new ModuleStatus($name, ($active ? $install == $active : false), $install);
+        $this->flushCache();
     }
 
     /**
@@ -215,7 +216,7 @@ abstract class FileActivatorBase implements ActivatorInterface
     public function setInstallByName(string $name, bool $active): void
     {
         $this->modulesStatuses[$name] = new ModuleStatus($name, $active, $active);
-       $this->flushCache();
+        $this->flushCache();
     }
 
     /**
@@ -229,7 +230,7 @@ abstract class FileActivatorBase implements ActivatorInterface
             return;
         }
         unset($this->modulesStatuses[$module->getName()]);
-         $this->flushCache();
+        $this->flushCache();
     }
 
     /**
