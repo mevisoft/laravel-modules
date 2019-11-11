@@ -245,8 +245,7 @@ class FileActivator implements ActivatorInterface
         if (!$this->files->exists($this->statusesFile)) {
             return [];
         }
-        var_dump(realpath($this->statusesFile));
-
+       
         return unserialize($this->files->get($this->statusesFile));
     }
 
