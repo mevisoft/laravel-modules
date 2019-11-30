@@ -27,7 +27,7 @@ class ListCommand extends Command
      */
     public function handle()
     {
-        $this->table(['Name', 'Status', 'Order', 'Path'], $this->getRows());
+        $this->table(['Name', 'Status','Install', 'Order', 'Path'], $this->getRows());
     }
 
     /**
@@ -44,6 +44,7 @@ class ListCommand extends Command
             $rows[] = [
                 $module->getName(),
                 $module->isEnabled() ? 'Enabled' : 'Disabled',
+                $module->isInstall() ? 'Installed' : 'No Installed',
                 $module->get('order'),
                 $module->getPath(),
             ];

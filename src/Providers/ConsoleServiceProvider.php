@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Commands\AuthProviderMakeCommand;
 use Nwidart\Modules\Commands\CommandMakeCommand;
 use Nwidart\Modules\Commands\ControllerMakeCommand;
+use Nwidart\Modules\Commands\DeleteCommand;
 use Nwidart\Modules\Commands\DisableCommand;
 use Nwidart\Modules\Commands\DumpCommand;
 use Nwidart\Modules\Commands\EnableCommand;
@@ -18,6 +19,7 @@ use Nwidart\Modules\Commands\LaravelModulesV6Migrator;
 use Nwidart\Modules\Commands\ListCommand;
 use Nwidart\Modules\Commands\ListenerMakeCommand;
 use Nwidart\Modules\Commands\MailMakeCommand;
+use Nwidart\Modules\Commands\MakeInstallCommand;
 use Nwidart\Modules\Commands\MiddlewareMakeCommand;
 use Nwidart\Modules\Commands\MigrateCommand;
 use Nwidart\Modules\Commands\MigrateRefreshCommand;
@@ -57,6 +59,8 @@ class ConsoleServiceProvider extends ServiceProvider
     protected $commands = [
         CommandMakeCommand::class,
         ControllerMakeCommand::class,
+        MakeInstallCommand::class,
+        DeleteCommand::class,
         DisableCommand::class,
         DumpCommand::class,
         EnableCommand::class,
